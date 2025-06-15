@@ -66,7 +66,7 @@ class LugarModel {
 }
 
   async crearLugar(data) {
-    return db.tx(async t => {
+    return db.transaccion(async t => {
       const direccionId = uuidv4();
       await t.none(`
         INSERT INTO direccion(id, ciudad, calle, numero, referencia)

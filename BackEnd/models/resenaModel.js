@@ -1,27 +1,28 @@
-const db = require('../db'); 
+const DAO = require('./dao');
+const db = new DAO();
 
 class ResenaModel {
   static async crear({ usuario_id, lugar_id, puntuacion, comentario }) {
-    const qrReserva = `
-      SELECT id 
-      FROM "Reserva" 
-      WHERE usuario_id = $1 
-        AND lugar_id   = $2 
-      LIMIT 1
-    `;
-    const { rows: rRows } = await db.query(qrReserva, [usuario_id, lugar_id]);
-    const reserva_id = rRows[0]?.id || null;
+    return db.transaccion(async t => {
+      const qrReserva = `
+        SELECT id
+        FROM "Reserva"
+        WHERE usuario_id = $1
+          AND lugar_id   = $2
+        LIMIT 1
+      `;
+      const reservaRow = await t.oneOrNone(qrReserva, [usuario_id, lugar_id]);
+      const reserva_id = reservaRow?.id || null;
 
-    const qrInsert = `
-      INSERT INTO "Reseña"
-        (id, reserva_id, usuario_id, puntuacion, comentario, fecha)
-      VALUES
-        (gen_random_uuid(), $1, $2, $3, $4, NOW())
-      RETURNING *
-    `;
-    const values = [reserva_id, usuario_id, puntuacion, comentario];
-    const { rows } = await db.query(qrInsert, values);
-    return rows[0];
+      const qrInsert = `
+        INSERT INTO "Reseña"
+          (id, reserva_id, usuario_id, puntuacion, comentario, fecha)
+        VALUES
+          (gen_random_uuid(), $1, $2, $3, $4, NOW())
+        RETURNING *
+      `;
+      return t.one(qrInsert, [reserva_id, usuario_id, puntuacion, comentario]);
+    });
   }
 
   static async listarPorLugar(lugar_id) {
@@ -38,8 +39,7 @@ class ResenaModel {
       WHERE res.lugar_id = $1
       ORDER BY r.fecha DESC
     `;
-    const { rows } = await db.query(qr, [lugar_id]);
-    return rows;
+    return await db.consultar(qr, [lugar_id]);
   }
 }
 

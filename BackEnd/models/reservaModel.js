@@ -3,22 +3,23 @@ const db = new DAO();
 
 class ReservaModel {
   async crearReserva(data) {
-    const sql = `
-      INSERT INTO Reserva (id, usuario_id, lugar_id, tipo_evento_id, fecha_inicio, fecha_fin, estado, cantidad, total, created_at)
-      VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, 'pendiente', $6, $7, CURRENT_DATE)
-      RETURNING id;
-    `;
-    const params = [
-      data.usuario_id,
-      data.lugar_id,
-      data.tipo_evento_id,
-      data.fecha_inicio,
-      data.fecha_fin,
-      data.cantidad,
-      data.total
-    ];
-    const result = await db.consultar(sql, params);
-    return result[0];
+    return db.transaccion(async t => {
+      const sql = `
+        INSERT INTO Reserva (id, usuario_id, lugar_id, tipo_evento_id, fecha_inicio, fecha_fin, estado, cantidad, total, created_at)
+        VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, 'pendiente', $6, $7, CURRENT_DATE)
+        RETURNING id;
+      `;
+      const params = [
+        data.usuario_id,
+        data.lugar_id,
+        data.tipo_evento_id,
+        data.fecha_inicio,
+        data.fecha_fin,
+        data.cantidad,
+        data.total
+      ];
+      return await t.one(sql, params);
+    });
   }
 
   async obtenerReservasPorLugar(lugarId) {

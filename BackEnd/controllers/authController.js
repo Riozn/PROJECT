@@ -14,22 +14,31 @@ module.exports = {
     try {
       const { nombre, email, telefono, contrasena } = req.body;
 
-      const existe = await db.consultar('SELECT * FROM Usuario WHERE email = $1', [email]);
-      if (existe.length > 0) {
-        return res.status(400).json({ error: 'El usuario ya existe' });
-      }
+      const usuario = await db.transaccion(async t => {
+        const existe = await t.any('SELECT 1 FROM Usuario WHERE email = $1', [email]);
+        if (existe.length > 0) {
+          throw new Error('El usuario ya existe');
+        }
 
-      const id = uuidv4();
-      const rol = 'cliente';
-      await db.consultar(`
-        INSERT INTO Usuario (id, nombre, email, telefono, contrasena, rol, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)
-      `, [id, nombre, email, telefono, contrasena, rol]);
+        const id = uuidv4();
+        const rol = 'cliente';
+        await t.none(
+          `
+            INSERT INTO Usuario (id, nombre, email, telefono, contrasena, rol, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)
+          `,
+          [id, nombre, email, telefono, contrasena, rol]
+        );
 
-      const usuario = { id, nombre, email, rol };
+        return { id, nombre, email, rol };
+      });
+
       const token = generarToken(usuario);
       res.json({ usuario, token });
     } catch (err) {
+      if (err.message === 'El usuario ya existe') {
+        return res.status(400).json({ error: err.message });
+      }
       console.error('Error en registro:', err);
       res.status(500).json({ error: 'Error en el servidor' });
     }

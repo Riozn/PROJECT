@@ -29,9 +29,10 @@ module.exports = {
   crearLugar: async (req, res) => {
     try {
       const data = req.body;
-      if (req.file) {
-        const filePath = `/uploads/lugares/${req.file.filename}`;
-        data.url = filePath;
+      if (req.files && req.files.length > 0) {
+        data.urls = req.files.map(f => `/uploads/lugares/${f.filename}`);
+      } else if (req.file) {
+        data.urls = [`/uploads/lugares/${req.file.filename}`];
       }
       const nuevoId = await lugarModel.crearLugar(data);
       return res.json({ success: true, lugarId: nuevoId });

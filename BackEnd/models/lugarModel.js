@@ -88,12 +88,19 @@ class LugarModel {
         VALUES($1, $2, $3, $4)
       `, [detallePrecioId, lugarId, modalidad.id, data.precio]);
 
-      if (data.url && data.url.trim() !== '') {
-        const fotoId = uuidv4();
-        await t.none(`
-          INSERT INTO fotolugar(id, lugar_id, url, descripcion)
-          VALUES($1, $2, $3, $4)
-        `, [fotoId, lugarId, data.url, 'Foto principal']);
+      if (Array.isArray(data.urls)) {
+        for (const url of data.urls) {
+          if (url && url.trim() !== '') {
+            const fotoId = uuidv4();
+            await t.none(
+              `
+                INSERT INTO fotolugar(id, lugar_id, url, descripcion)
+                VALUES($1, $2, $3, $4)
+              `,
+              [fotoId, lugarId, url, 'Imagen']
+            );
+          }
+        }
       }
 
       return lugarId;

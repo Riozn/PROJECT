@@ -33,13 +33,6 @@ module.exports = {
       const imagen_pago = `/public/uploads/${req.file.filename}`;
       const pagoCompleto = es_pago_completo === "true";
 
-      await pagoModel.registrarPago({
-        reserva_id,
-        monto,
-        imagen_pago,
-        es_pago_completo: pagoCompleto
-      });
-
       const transacciones = [];
 
       if (pagoCompleto) {
@@ -72,7 +65,15 @@ module.exports = {
         }
       }
 
-      await pagoModel.registrarTransacciones(transacciones);
+      await pagoModel.registrarPagoConTransacciones(
+        {
+          reserva_id,
+          monto,
+          imagen_pago,
+          es_pago_completo: pagoCompleto
+        },
+        transacciones
+      );
 
       res.json({ success: true });
     } catch (error) {

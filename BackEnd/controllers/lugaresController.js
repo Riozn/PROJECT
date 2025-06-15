@@ -44,7 +44,7 @@ module.exports = {
     }
 
     try {
-      await db.tx('crear-lugar', async (t) => {
+      await db.transaccion(async (t) => {
         const direccion_id = uuidv4();
         await t.none(
           `

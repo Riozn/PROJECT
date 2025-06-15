@@ -16,6 +16,10 @@ class DAO {
   getDb() {
     return db;
   }
+
+  transaccion(fn) {
+    return db.tx(fn);
+  }
 }
 
 module.exports = DAO;

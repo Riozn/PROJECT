@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GesEven - Inicio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+
+  <nav class="bg-white shadow sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.href='/'">GesEven</h1>
+      <div id="nav-user" class="flex items-center gap-2"></div>
+    </div>
+  </nav>
+
+  <section class="bg-white py-16">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col-reverse md:flex-row items-center gap-12">
+      <div class="md:w-1/2">
+        <h2 class="text-4xl font-extrabold text-gray-900 leading-tight mb-4">
+          Encuentra el lugar perfecto para tu evento
+        </h2>
+        <p class="text-lg text-gray-600 mb-6">
+          Salones, jardines, auditorios y más. Gestión de reservas fácil, rápida y segura.
+        </p>
+        <p class="text-sm text-gray-400">
+          Desliza hacia abajo para explorar los espacios disponibles.
+        </p>
+      </div>
+      <div class="md:w-1/2">
+        <img
+          src="https://i.pinimg.com/736x/0f/0a/77/0f0a77184ca4ee1bf4183be545eafea5.jpg"
+          alt="Eventos"
+          class="rounded-lg shadow-xl w-full"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white py-6">
+    <div class="max-w-7xl mx-auto px-4">
+      <h4 class="text-xl font-semibold text-gray-700 mb-4">🎯 Filtrar lugares</h4>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <input type="text" id="filtroCiudad" placeholder="Ciudad" class="border border-gray-300 px-4 py-2 rounded" />
+        <select id="filtroCategoria" class="border border-gray-300 px-4 py-2 rounded">
+          <option value="">Todas las categorías</option>
+          <option value="Salón">Salón</option>
+          <option value="Jardín">Jardín</option>
+        </select>
+        <input type="number" id="filtroPrecioMin" placeholder="Precio mínimo" class="border border-gray-300 px-4 py-2 rounded" />
+        <input type="number" id="filtroPrecioMax" placeholder="Precio máximo" class="border border-gray-300 px-4 py-2 rounded" />
+      </div>
+    </div>
+  </section>
+
+  <section id="lugares" class="py-16 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4">
+      <h3 class="text-3xl font-bold text-center mb-10 text-blue-800">🏢 Lugares Disponibles</h3>
+      <div id="lista-lugares" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <p class="col-span-full text-center text-gray-500">Cargando lugares...</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-gray-900 text-white text-center py-6 mt-auto">
+    <p>&copy; 2025 GesEven. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="public/js/index.js"></script>
+  <script src="public/js/navbarUsuario.js"></script>
+</body>
+</html>

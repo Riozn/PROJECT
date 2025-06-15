@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Publicar Lugar - GesEven</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <div id="customModal" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden bg-green-100 text-green-800 px-6 py-3 rounded shadow-md border border-green-300 transition-all duration-500"></div>
+
+  <main class="flex-grow max-w-4xl mx-auto p-6 bg-white mt-10 rounded shadow">
+    <h2 class="text-3xl font-bold text-blue-700 mb-6">📌 Publicar nuevo lugar</h2>
+    <form id="formPublicar" enctype="multipart/form-data" method="POST" action="/lugar" class="space-y-6">
+      <input type="text" name="titulo" placeholder="Título del lugar" required class="w-full border px-4 py-2 rounded" />
+      <textarea name="descripcion" placeholder="Descripción del lugar" required class="w-full border px-4 py-2 rounded"></textarea>
+      <input type="text" name="ciudad" placeholder="Ciudad" required class="w-full border px-4 py-2 rounded" />
+      <input type="text" name="calle" placeholder="Calle" required class="w-full border px-4 py-2 rounded" />
+      <input type="text" name="numero" placeholder="Número" required class="w-full border px-4 py-2 rounded" />
+      <input type="text" name="referencia" placeholder="Referencia (opcional)" class="w-full border px-4 py-2 rounded" />
+      <input type="number" name="capacidad" placeholder="Capacidad (personas)" min="1" required class="w-full border px-4 py-2 rounded" />
+      <input type="number" name="tamano_m2" placeholder="Tamaño en m²" min="1" required class="w-full border px-4 py-2 rounded" />
+      <input type="number" name="precio" placeholder="Precio base (Bs)" min="1" required class="w-full border px-4 py-2 rounded" />
+
+      <select name="modalidad" required class="w-full border px-4 py-2 rounded">
+        <option value="">Seleccionar modalidad</option>
+        <option value="por_dia">Por día</option>
+        <option value="por_hora">Por hora</option>
+      </select>
+
+      <select name="categoria" id="categoria" required class="w-full border px-4 py-2 rounded">
+        <option value="">Seleccionar categoría</option>
+        <!-- Las categorías se cargarán aquí dinámicamente -->
+      </select>
+
+      <div>
+        <label class="block font-semibold text-sm text-gray-700 mb-1">Foto principal del lugar</label>
+        <input type="file" name="photos" accept="image/*" required class="w-full border px-4 py-2 rounded" />
+      </div>
+
+      <div class="mb-4">
+        <label class="block font-semibold text-sm text-gray-700 mb-1">Selecciona la ubicación en el mapa:</label>
+        <div id="map" class="w-full h-64 rounded border"></div>
+      </div>
+
+      <input type="hidden" name="latitud" id="latitud" />
+      <input type="hidden" name="longitud" id="longitud" />
+      <input type="hidden" name="propietario_id" id="propietario_id" value="" />
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition font-semibold">
+        Publicar lugar
+      </button>
+    </form>
+  </main>
+
+  <footer class="bg-gray-900 text-white text-center py-6 mt-auto">
+    <p>&copy; 2025 GesEven. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Cargar categorías dinámicamente desde /api/categorias
+    async function cargarCategorias() {
+      try {
+        const res = await fetch('/api/categorias');
+        const categorias = await res.json();
+        const select = document.getElementById('categoria');
+
+        categorias.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.nombre;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    }
+
+    // Cargar ID del usuario desde localStorage (simulado)
+    function cargarUsuario() {
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+      if (usuario && usuario.id) {
+        document.getElementById('propietario_id').value = usuario.id;
+      }
+    }
+
+    // Inicializar mapa Leaflet
+    let marker;
+    const map = L.map("map").setView([-17.7832, -63.1821], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+    map.on("click", e => {
+      const { lat, lng } = e.latlng;
+      if (marker) marker.setLatLng([lat, lng]);
+      else marker = L.marker([lat, lng]).addTo(map);
+      document.getElementById("latitud").value = lat;
+      document.getElementById("longitud").value = lng;
+    });
+
+    // Enviar formulario con fetch
+    document.getElementById("formPublicar").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = document.getElementById("formPublicar");
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: formData
+        });
+        const result = await res.json();
+        if (result.success) {
+          mostrarModal('✅ Lugar publicado con éxito.');
+          form.reset();
+          if (marker) { marker.remove(); marker = null; }
+        } else {
+          mostrarModal(result.message || '❌ Error al publicar.', 'red');
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarModal('❌ Error de conexión.', 'red');
+      }
+    });
+
+    // Mostrar mensajes emergentes
+    function mostrarModal(mensaje, color = 'green') {
+      const modal = document.getElementById("customModal");
+      modal.textContent = mensaje;
+      modal.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-${color}-100 text-${color}-800 px-6 py-3 rounded shadow-md border border-${color}-300`;
+      modal.classList.remove('hidden');
+      setTimeout(() => { modal.classList.add('hidden'); }, 3000);
+    }
+
+    // Ejecutar al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarCategorias();
+      cargarUsuario();
+    });
+  </script>
+</body>
+</html>

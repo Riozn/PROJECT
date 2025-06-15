@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detalle del Lugar - GesEven</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1
+        class="text-2xl font-bold text-blue-600 cursor-pointer"
+        onclick="location.href='/'"
+      >
+        GesEven
+      </h1>
+      <div id="nav-user" class="flex items-center gap-2"></div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto p-6 mt-6 bg-white rounded-xl shadow-xl space-y-12">
+    <h2
+      id="tituloLugarHeader"
+      class="text-4xl font-extrabold text-center text-gray-800"
+    >
+      Detalle del Lugar
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+      <div class="md:col-span-2 space-y-8">
+
+        <img
+          id="imagenPrincipal"
+          src=""
+          alt="Imagen del lugar"
+          class="w-full h-80 object-cover rounded-lg shadow"
+        />
+
+        <section class="bg-gray-50 p-6 rounded-lg border">
+          <h3 class="text-2xl font-semibold mb-2">Descripción</h3>
+          <p id="textoDescripcion" class="text-gray-700 leading-relaxed"></p>
+        </section>
+
+        <section>
+          <h3 class="text-2xl font-semibold mb-2">Ubicación</h3>
+          <div id="map" class="w-full h-80 rounded-lg border"></div>
+        </section>
+
+        <section
+          id="nuevaResena"
+          class="bg-gray-50 p-6 rounded-lg border space-y-4"
+        >
+          <h3 class="text-2xl font-semibold">Deja tu reseña</h3>
+
+          <form id="formResena" class="flex flex-col gap-2">
+            <label class="flex items-center gap-2">
+              <span>Puntuación:</span>
+              <select
+                id="puntuacion"
+                required
+                class="border rounded p-1"
+              >
+                <option value="">– elige –</option>
+                <option value="1">1 ⭐</option>
+                <option value="2">2 ⭐⭐</option>
+                <option value="3">3 ⭐⭐⭐</option>
+                <option value="4">4 ⭐⭐⭐⭐</option>
+                <option value="5">5 ⭐⭐⭐⭐⭐</option>
+              </select>
+            </label>
+
+            <textarea
+              id="comentario"
+              rows="4"
+              placeholder="Escribe tu comentario..."
+              class="border rounded p-2"
+              required
+            ></textarea>
+
+            <button
+              type="submit"
+              class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-semibold"
+            >
+              Enviar reseña
+            </button>
+          </form>
+        </section>
+
+        <section class="bg-gray-50 p-6 rounded-lg border space-y-4">
+          <h3 class="text-2xl font-semibold">Reseñas y Puntuación</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-semibold">Promedio:</span>
+            <span id="valorPromedio" class="text-lg">–</span>
+            <div id="estrellasPromedio" class="flex items-center gap-1"></div>
+          </div>
+          <div id="listaReseñas" class="space-y-4"></div>
+        </section>
+
+      </div>
+
+      <aside class="space-y-6">
+        <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg shadow">
+          <h4 class="text-xl font-semibold mb-4 text-blue-700">📍 Información</h4>
+
+          <p><strong>Propietario:</strong> <span id="propietarioNombre"></span></p>
+          <p><strong>Teléfono:</strong> <span id="propietarioTelefono"></span></p>
+          <p><strong>Ciudad:</strong> <span id="ciudadLugar"></span></p>
+          <p><strong>Dirección:</strong> <span id="direccionLugar"></span></p>
+          <p>
+            <strong>Capacidad:</strong>
+            <span id="capacidadLugar"></span> personas
+          </p>
+          <p>
+            <strong>Tamaño:</strong>
+            <span id="tamanoLugar"></span> m²
+          </p>
+
+          <button
+            id="btnReservar"
+            class="w-full mt-4 bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition font-semibold"
+          >
+            Reservar ahora
+          </button>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <footer class="bg-gray-900 text-white text-center py-6 mt-12">
+    <p>&copy; 2025 GesEven. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="/public/js/navbarUsuario.js"></script>
+
+  <script src="/public/js/detalleLugar.js"></script>
+</body>
+</html>

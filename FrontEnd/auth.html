@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GesEven - Autenticación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.href='/'">
+        GesEven
+      </h1>
+    </div>
+  </nav>
+
+  <main class="flex-grow flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+      <h2 id="form-title" class="text-2xl font-bold text-center text-blue-600 mb-6">
+        Crear una cuenta
+      </h2>
+
+      <form id="registro-form" class="space-y-4">
+        <input
+          type="text"
+          placeholder="Nombre completo"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <input
+          type="tel"
+          placeholder="Número de celular"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+        >
+          Registrarse
+        </button>
+      </form>
+
+      <form id="login-form" class="space-y-4 hidden mt-6">
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+        >
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <p class="text-center text-gray-600 mt-6" id="toggle-text">
+        ¿Ya tienes cuenta?
+        <button id="toggle-button" class="text-blue-600 hover:underline">
+          Inicia sesión
+        </button>
+      </p>
+    </div>
+  </main>
+
+  <footer class="bg-gray-900 text-white text-center py-6">
+    <p>&copy; 2025 GesEven. Todos los derechos reservados.</p>
+  </footer>
+
+  <script>
+    const toggleBtn = document.getElementById("toggle-button");
+    const formTitle = document.getElementById("form-title");
+    const registroForm = document.getElementById("registro-form");
+    const loginForm = document.getElementById("login-form");
+
+    toggleBtn.addEventListener("click", () => {
+      const isLogin = !registroForm.classList.contains("hidden");
+      registroForm.classList.toggle("hidden");
+      loginForm.classList.toggle("hidden");
+      formTitle.textContent = isLogin ? "Iniciar sesión" : "Crear una cuenta";
+      toggleBtn.innerText = isLogin ? "Regístrate" : "Inicia sesión";
+    });
+
+    registroForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const inputs = registroForm.querySelectorAll("input");
+      const data = {
+        nombre: inputs[0].value,
+        email: inputs[1].value,
+        telefono: inputs[2].value,    
+        contrasena: inputs[3].value,  
+      };
+
+      const res = await fetch("/api/auth/registro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("usuario", JSON.stringify(result.usuario));
+        redirigirPorRol(result.usuario.rol);
+      } else {
+        alert(result.error || "Error en el registro");
+      }
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const inputs = loginForm.querySelectorAll("input");
+      const data = {
+        email: inputs[0].value,
+        contrasena: inputs[1].value,
+      };
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("usuario", JSON.stringify(result.usuario));
+        redirigirPorRol(result.usuario.rol);
+      } else {
+        alert(result.error || "Error al iniciar sesión");
+      }
+    });
+
+    function redirigirPorRol(rol) {
+      if (rol === "admin") {
+        window.location.href = "/admin/dashboard.html";
+      } else {
+        window.location.href = "/index.html";
+      }
+    }
+  </script>
+</body>
+</html>

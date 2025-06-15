@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reservar Lugar - GesEven</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
+  <style>
+    #calendar {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    }
+    .fc-toolbar-title {
+      font-size: 1.5rem !important;
+      font-weight: 600;
+      color: #1e40af;
+    }
+    .fc-button {
+      background-color: #1d4ed8 !important;
+      border: none !important;
+      text-transform: capitalize;
+    }
+    .fc-button:hover {
+      background-color: #1e3a8a !important;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 text-gray-800 min-h-screen">
+  <nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-3xl font-extrabold text-blue-700 cursor-pointer" onclick="location.href='/'">GesEven</h1>
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+  <main class="max-w-5xl mx-auto p-6 mt-10 bg-white rounded-xl shadow-xl">
+    <h2 class="text-4xl font-bold text-center text-blue-800 mb-10 tracking-tight">Reserva tu espacio ideal</h2>
+    <section class="mb-10">
+      <div id="calendar"></div>
+    </section>
+    <form id="formReserva" class="space-y-6">
+      <input type="hidden" id="fechaInicio" required />
+      <input type="hidden" id="fechaFin" required />
+      <div>
+        <label for="tipoEvento" class="block text-sm font-semibold text-gray-700 mb-1">Tipo de evento</label>
+        <select id="tipoEvento" required class="w-full border border-blue-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Cargando tipos de evento...</option>
+        </select>
+      </div>
+      <div>
+        <label for="cantidad" class="block text-sm font-semibold text-gray-700 mb-1">Cantidad de personas</label>
+        <input type="number" id="cantidad" min="1" required class="w-full border border-blue-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 transition text-lg font-semibold shadow">
+        Confirmar Reserva
+      </button>
+      <p id="mensaje" class="mt-4 text-center font-semibold text-red-600"></p>
+    </form>
+  </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const usuarioStorage = JSON.parse(localStorage.getItem("usuario"));
+      const tokenStorage   = localStorage.getItem("token");
+      if (!usuarioStorage || !tokenStorage) {
+        alert("Debes iniciar sesión para reservar.");
+        window.location.href = "auth.html";
+        return;
+      }
+      const navUserDiv = document.getElementById("nav-user");
+      navUserDiv.innerHTML = `
+        <button id="perfilBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+          👤 ${usuarioStorage.nombre}
+        </button>
+        <button id="btnCerrarSesion" class="ml-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+          Cerrar Sesión
+        </button>
+      `;
+      document.getElementById("btnCerrarSesion").onclick = () => {
+        localStorage.clear();
+        window.location.href = "/";
+      };
+      const params            = new URLSearchParams(window.location.search);
+      const lugarId           = params.get("id");
+      const usuarioId         = usuarioStorage.id;
+      const calendarEl        = document.getElementById("calendar");
+      const fechaInicioInput  = document.getElementById("fechaInicio");
+      const fechaFinInput     = document.getElementById("fechaFin");
+      const mensajeEl         = document.getElementById("mensaje");
+      const tipoEventoSelect  = document.getElementById("tipoEvento");
+      let modalidadPrecio = "por_dia";
+      let precioBase      = 0;
+      async function cargarTiposEvento() {
+        try {
+          const res = await fetch("/api/tipos-evento", {
+            headers: { "Authorization": "Bearer " + tokenStorage }
+          });
+          const tipos = await res.json();
+          tipoEventoSelect.innerHTML = '<option value="">Selecciona un tipo</option>';
+          tipos.forEach((tipo) => {
+            const option = document.createElement("option");
+            option.value       = tipo.id;
+            option.textContent = tipo.nombre;
+            tipoEventoSelect.appendChild(option);
+          });
+        } catch {
+          tipoEventoSelect.innerHTML = '<option value="">Error cargando tipos</option>';
+        }
+      }
+      async function cargarModalidadLugar() {
+        try {
+          const res = await fetch(`/lugar/${encodeURIComponent(lugarId)}`, {
+            headers: { "Authorization": "Bearer " + tokenStorage }
+          });
+          const lugar = await res.json();
+          modalidadPrecio = lugar.modalidad;
+          precioBase      = parseFloat(lugar.precio);
+        } catch {
+          mensajeEl.textContent = "Error cargando modalidad del lugar.";
+        }
+      }
+      async function cargarReservas() {
+        try {
+          const res = await fetch(`/api/reservas/lugar/${encodeURIComponent(lugarId)}`, {
+            headers: { "Authorization": "Bearer " + tokenStorage }
+          });
+          const reservas = await res.json();
+          return reservas.map((r) => ({
+            title:   "Reservado",
+            start:   r.fecha_inicio,
+            end:     r.fecha_fin,
+            color:   "#ef4444",
+            allDay:  modalidadPrecio === "por_dia"
+          }));
+        } catch {
+          return [];
+        }
+      }
+      async function iniciarCalendario() {
+        const eventosReservados = await cargarReservas();
+        const initialView      = modalidadPrecio === "por_dia" ? "dayGridMonth" : "timeGridWeek";
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView,
+          selectable:     true,
+          events:         eventosReservados,
+          selectOverlap:  false,
+          select(info) {
+            fechaInicioInput.value = info.startStr;
+            fechaFinInput.value    = info.endStr;
+            mensajeEl.style.color   = "green";
+            mensajeEl.textContent   = `Seleccionado: ${info.startStr} a ${info.endStr}`;
+          },
+          eventClick() {
+            alert("Este periodo ya está reservado.");
+          }
+        });
+        calendar.render();
+      }
+      document.getElementById("formReserva").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!fechaInicioInput.value || !fechaFinInput.value) {
+          mensajeEl.style.color = "red";
+          mensajeEl.textContent = "Selecciona un rango de fechas válido.";
+          return;
+        }
+        const inicio = new Date(fechaInicioInput.value);
+        const fin    = new Date(fechaFinInput.value);
+        let total    = 0;
+        if (modalidadPrecio === "por_dia") {
+          const diffDias = Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24));
+          total = precioBase * diffDias;
+        } else {
+          const diffHoras = (fin - inicio) / (1000 * 60 * 60);
+          total = precioBase * diffHoras;
+        }
+        const data = {
+          usuario_id:      usuarioId,
+          lugar_id:        lugarId,
+          tipo_evento_id:  tipoEventoSelect.value,
+          fecha_inicio:    fechaInicioInput.value,
+          fecha_fin:       fechaFinInput.value,
+          cantidad:        parseInt(document.getElementById("cantidad").value, 10),
+          total:           parseFloat(total.toFixed(2))
+        };
+        try {
+          const res = await fetch("/api/reservas", {
+            method:  "POST",
+            headers: {
+              "Content-Type":  "application/json",
+              "Authorization": "Bearer " + tokenStorage
+            },
+            body: JSON.stringify(data)
+          });
+          const result = await res.json();
+          if (result.success) {
+            window.location.href = `pago.html?reservaId=${result.reservaId}&total=${data.total}`;
+          } else {
+            mensajeEl.style.color = "red";
+            mensajeEl.textContent = "Error al crear la reserva: " + (result.message || result.error);
+          }
+        } catch {
+          mensajeEl.style.color = "red";
+          mensajeEl.textContent = "Error de conexión con el servidor.";
+        }
+      });
+      await cargarTiposEvento();
+      await cargarModalidadLugar();
+      await iniciarCalendario();
+    });
+  </script>
+  <script src="public/js/navbarUsuario.js"></script>
+</body>
+</html>

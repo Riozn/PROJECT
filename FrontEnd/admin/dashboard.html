@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Panel de Administración - GesEven</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @media (min-width: 768px) {
+        #sidebar {
+          min-width: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- Navbar superior -->
+    <nav class="bg-blue-800 shadow text-white sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold cursor-pointer" onclick="location.href='/'">
+          GesEven
+          <span class="text-base bg-blue-600 px-2 py-1 rounded ml-2">Admin</span>
+        </h1>
+        <button id="cerrarSesionBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 font-semibold">
+          Cerrar sesión
+        </button>
+      </div>
+    </nav>
+
+    <div class="flex flex-1">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="bg-white border-r shadow-md flex flex-col py-8 px-4 space-y-2 w-64 hidden md:block">
+        <nav class="space-y-2">
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="usuarios">Usuarios</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="lugares">Lugares</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="reservas">Reservas</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="resenas">Reseñas</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="categorias">Categorías</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="tipos">Tipos de Evento</a>
+          <a href="#" class="block py-2 px-4 rounded hover:bg-blue-100 font-semibold" data-seccion="pagos">Pagos</a>
+        </nav>
+      </aside>
+
+      <!-- Contenido principal -->
+      <main class="flex-1 p-8">
+        <h2 id="tituloModulo" class="text-3xl font-extrabold text-blue-800 mb-8">
+          👋 Bienvenido, Administrador
+        </h2>
+        <div id="moduloContenido">
+          <div class="bg-white border rounded-lg shadow-lg p-8 text-center text-xl text-gray-700">
+            Selecciona una opción del menú lateral para gestionar los datos.
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <footer class="bg-gray-900 text-white text-center py-6 mt-auto">
+      <p>&copy; 2025 GesEven. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Carga los scripts globales de cada módulo -->
+    <script src="../public/js/adminUsuarios.js"></script>
+    <script src="../public/js/adminLugares.js"></script>
+
+    <script>
+      // Seguridad: solo admins
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+      if (!usuario || usuario.rol !== "admin") {
+        window.location.href = "/";
+      }
+      // Logout
+      document.getElementById("cerrarSesionBtn").onclick = () => {
+        localStorage.clear();
+        window.location.href = "auth.html";
+      };
+
+      // Sidebar dinámico
+      const sidebarLinks = document.querySelectorAll("#sidebar nav a");
+      const tituloModulo = document.getElementById("tituloModulo");
+      const moduloLoaders = {
+        usuarios: window.cargarModuloUsuarios,
+        lugares:  window.cargarModuloLugares,
+        // aquí podrás añadir reservas, reseñas, etc.
+      };
+
+      sidebarLinks.forEach(link => {
+        link.addEventListener("click", e => {
+          e.preventDefault();
+          // marca active
+          sidebarLinks.forEach(l => l.classList.remove("bg-blue-200", "text-blue-800"));
+          link.classList.add("bg-blue-200", "text-blue-800");
+
+          const seccion = link.dataset.seccion;
+          // título
+          const emojis = {
+            usuarios: "👥",
+            lugares:  "🏢",
+            reservas: "📅",
+            resenas:  "🌟",
+            categorias:"🗂️",
+            tipos:    "🎭",
+            pagos:    "💸"
+          };
+          const nombres = {
+            usuarios: "Gestión de Usuarios",
+            lugares:  "Gestión de Lugares",
+            reservas: "Gestión de Reservas",
+            resenas:  "Gestión de Reseñas",
+            categorias:"Gestión de Categorías",
+            tipos:    "Gestión de Tipos de Evento",
+            pagos:    "Gestión de Pagos"
+          };
+          tituloModulo.textContent = `${emojis[seccion]||'👋'} ${nombres[seccion]||'Bienvenido, Administrador'}`;
+
+          // carga el módulo
+          if (moduloLoaders[seccion]) {
+            moduloLoaders[seccion]();
+          } else {
+            document.getElementById("moduloContenido").innerHTML =
+              `<div class="bg-white border rounded-lg shadow-lg p-8 text-center text-xl text-gray-700">
+                Aquí irá el CRUD de ${nombres[seccion] || ''}.
+              </div>`;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

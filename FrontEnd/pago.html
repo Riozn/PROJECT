@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pago de Reserva - GesEven</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
+
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.href='/'">GesEven</h1>
+    </div>
+  </nav>
+
+  <main class="max-w-2xl mx-auto bg-white shadow mt-10 p-8 rounded">
+    <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Pago de Reserva</h2>
+
+    <div class="bg-gray-50 p-4 rounded shadow-inner mb-6">
+      <p><strong>ID Reserva:</strong> <span id="idReserva"></span></p>
+      <p><strong>Total a pagar:</strong> <span id="total"></span> Bs</p>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="font-semibold text-lg mb-2 text-gray-700">Datos para el pago</h3>
+      <ul class="text-sm text-gray-700 space-y-1 ml-4 list-disc">
+        <li><strong>Banco:</strong> Banco Ficticio</li>
+        <li><strong>Cuenta:</strong> 12345678</li>
+        <li><strong>Alias:</strong> geseven.pagos</li>
+        <li><strong>Concepto:</strong> Reserva <span id="qr-id"></span></li>
+      </ul>
+
+      <div class="mt-4 text-center">
+        <img id="qr-img" class="mx-auto rounded shadow w-56 h-56" alt="Código QR de pago" />
+        <p class="text-sm text-gray-600 mt-2">Escanea con tu app bancaria o descarga el comprobante.</p>
+      </div>
+
+      <div class="text-center mt-4">
+        <button onclick="generarComprobantePDF()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+          Descargar comprobante de pago
+        </button>
+      </div>
+    </div>
+
+    <form id="formPago" enctype="multipart/form-data" class="space-y-4 mt-8 border-t pt-6">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4">Subir comprobante</h3>
+
+      <div>
+        <label class="block font-medium mb-1">Comprobante de pago (imagen o PDF)</label>
+        <input type="file" name="imagen_pago" id="imagen_pago" accept="image/*,application/pdf" required class="w-full border rounded px-3 py-2" />
+      </div>
+
+      <div>
+        <label class="block font-medium mb-1">¿Pago completo?</label>
+        <select id="es_pago_completo" name="es_pago_completo" class="w-full border rounded px-3 py-2" onchange="toggleCamposParciales()">
+          <option value="true">Sí</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+
+      <div id="camposParciales" class="space-y-4 hidden">
+        <div>
+          <label class="block font-medium mb-1">Número de cuotas</label>
+          <input type="number" name="cuotas" id="cuotas" min="1" class="w-full border rounded px-3 py-2" />
+        </div>
+        <div>
+          <label class="block font-medium mb-1">Monto del adelanto</label>
+          <input type="number" name="adelanto" id="adelanto" min="0" step="0.01" class="w-full border rounded px-3 py-2" />
+        </div>
+        <p class="text-xs text-gray-500 italic">
+          El monto restante será dividido equitativamente entre las cuotas. Recuerde completar los pagos antes del evento.
+        </p>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Confirmar Pago</button>
+    </form>
+
+    <p id="mensaje" class="mt-4 text-center font-semibold"></p>
+
+    <div id="descarga-recibo" class="text-center mt-4 hidden">
+      <button onclick="generarReciboPDF()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Descargar recibo de pago
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const reservaId = new URLSearchParams(window.location.search).get('reservaId');
+    const total = new URLSearchParams(window.location.search).get('total');
+
+    document.getElementById('idReserva').textContent = reservaId;
+    document.getElementById('total').textContent = total;
+    document.getElementById('qr-id').textContent = reservaId;
+
+    const qrData = `Reserva ${reservaId} - Monto ${total} Bs - Banco Ficticio - Cuenta 12345678`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrData)}&size=200x200`;
+    document.getElementById('qr-img').src = qrUrl;
+
+    function toggleCamposParciales() {
+      const esCompleto = document.getElementById("es_pago_completo").value;
+      const campos = document.getElementById("camposParciales");
+      campos.classList.toggle("hidden", esCompleto === "true");
+    }
+
+    function generarComprobantePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleDateString();
+
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, 210, 30, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.text("GES-EVEN | Comprobante de Pago", 105, 20, null, null, 'center');
+
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(12);
+      let y = 40;
+      doc.text(`Fecha de emisión: ${fecha}`, 20, y); y += 10;
+      doc.text(`ID de Reserva: ${reservaId}`, 20, y); y += 10;
+      doc.text(`Monto a pagar: ${total} Bs`, 20, y); y += 10;
+      doc.text("Banco: Banco Ficticio", 20, y); y += 10;
+      doc.text("Cuenta: 12345678", 20, y); y += 10;
+      doc.text("Alias: geseven.pagos", 20, y); y += 10;
+      doc.text("Concepto: Pago por reserva de espacio para evento", 20, y); y += 20;
+
+      doc.setDrawColor(200);
+      doc.line(20, y, 190, y); y += 10;
+      doc.text("Firma o sello del cliente:", 20, y); y += 20;
+      doc.line(20, y, 100, y);
+
+      doc.save(`comprobante_pago_${reservaId}.pdf`);
+    }
+
+    function generarReciboPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleDateString();
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(0, 0, 210, 30, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.text("GES-EVEN | Recibo de Pago Confirmado", 105, 20, null, null, 'center');
+
+      doc.setTextColor(33, 37, 41);
+      doc.setFontSize(12);
+      let y = 40;
+      doc.text(`Fecha: ${fecha}`, 20, y); y += 10;
+      doc.text(`ID de Reserva: ${reservaId}`, 20, y); y += 10;
+      doc.text(`Monto pagado: ${total} Bs`, 20, y); y += 10;
+
+      const esCompleto = document.getElementById("es_pago_completo").value === "true";
+      if (!esCompleto) {
+        const cuotas = document.getElementById("cuotas").value || 1;
+        const adelanto = document.getElementById("adelanto").value || 0;
+        const restante = (total - adelanto).toFixed(2);
+        const porCuota = (restante / cuotas).toFixed(2);
+
+        doc.text("Pago parcial", 20, y); y += 10;
+        doc.text(`Adelanto: ${adelanto} Bs`, 20, y); y += 10;
+        doc.text(`Restante: ${restante} Bs en ${cuotas} cuotas de ${porCuota} Bs`, 20, y); y += 10;
+      }
+
+      doc.text("Método: Transferencia bancaria (comprobante adjunto)", 20, y); y += 10;
+      doc.text("Banco: Banco Ficticio", 20, y); y += 10;
+      doc.text("Cuenta: 12345678", 20, y); y += 10;
+      doc.text("Alias: geseven.pagos", 20, y); y += 20;
+
+      doc.setDrawColor(200);
+      doc.line(20, y, 190, y); y += 10;
+      doc.text("Firma GesEven:", 20, y); y += 20;
+      doc.line(20, y, 100, y);
+
+      doc.save(`recibo_pago_${reservaId}.pdf`);
+    }
+
+    document.getElementById('formPago').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = document.getElementById('formPago');
+      const formData = new FormData(form);
+      formData.append('reserva_id', reservaId);
+      formData.append('monto', total);
+      formData.append('es_pago_completo', document.getElementById('es_pago_completo').value);
+
+      const esCompleto = document.getElementById("es_pago_completo").value === "true";
+      if (!esCompleto) {
+        const cuotas = document.getElementById("cuotas").value;
+        const adelanto = document.getElementById("adelanto").value;
+        if (!cuotas || !adelanto) {
+          const mensajeEl = document.getElementById('mensaje');
+          mensajeEl.style.color = 'red';
+          mensajeEl.textContent = "Por favor completa adelanto y número de cuotas.";
+          return;
+        }
+        formData.append('cuotas', cuotas);
+        formData.append('adelanto', adelanto);
+      }
+
+      try {
+        const res = await fetch('/api/pagos', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await res.json();
+        const mensajeEl = document.getElementById('mensaje');
+
+        if (result.success) {
+          mensajeEl.style.color = 'green';
+          if (esCompleto) {
+            mensajeEl.textContent = "✅ Pago completo registrado. ¡Gracias por su reserva!";
+            document.getElementById('descarga-recibo').classList.remove('hidden');
+          } else {
+            mensajeEl.textContent = "🕗 Pago parcial registrado. Recuerde completar el monto restante antes del evento.";
+            document.getElementById('descarga-recibo').classList.remove('hidden');
+          }
+        } else {
+          mensajeEl.style.color = 'red';
+          mensajeEl.textContent = "❌ Error al registrar el pago.";
+        }
+      } catch (err) {
+        console.error(err);
+        const mensajeEl = document.getElementById('mensaje');
+        mensajeEl.style.color = 'red';
+        mensajeEl.textContent = "❌ Error en el servidor.";
+      }
+    });
+  </script>
+  <script src="public/js/navbarUsuario.js"></script>
+</body>
+</html>

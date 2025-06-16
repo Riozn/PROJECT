@@ -1,5 +1,5 @@
 const DAO = require('./dao');
-const db = new DAO().getDb();
+const db = new DAO();
 const { v4: uuidv4 } = require('uuid');
 
 class LugarModel {
@@ -19,7 +19,7 @@ class LugarModel {
       GROUP BY l.id, d.ciudad, dp.precio, mp.nombre, c.nombre, f.url
       ORDER BY l.created_at DESC;
     `;
-    return db.any(sql);
+    return db.consultar(sql);
   }
 
   async obtenerLugarPorId(id) {
@@ -42,7 +42,7 @@ class LugarModel {
                dp.precio, mp.nombre, c.nombre, u.nombre, u.email, u.telefono,
                l.latitud, l.longitud, f.url;
     `;
-    const results = await db.any(sql, [id]);
+    const results = await db.consultar(sql, [id]);
     return results.length > 0 ? results[0] : null;
   }
 
@@ -62,7 +62,7 @@ class LugarModel {
     )
     ORDER BY r.fecha DESC;
   `;
-  return await db.any(sql, [lugarId]);
+  return await db.consultar(sql, [lugarId]);
 }
 
   async crearLugar(data) {

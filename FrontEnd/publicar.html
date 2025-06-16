@@ -36,8 +36,9 @@
 
       <div>
         <label class="block font-semibold text-sm text-gray-700 mb-1">Fotos del lugar</label>
-        <input type="file" name="photos" accept="image/*" multiple required class="w-full border px-4 py-2 rounded" />
+        <input id="inputFotos" type="file" name="photos" accept="image/*" multiple required class="w-full border px-4 py-2 rounded" />
         <p class="text-xs text-gray-500 mt-1">Puedes seleccionar hasta 20 imágenes.</p>
+        <div id="previewFotos" class="flex flex-wrap gap-2 mt-2"></div>
       </div>
 
       <div class="mb-4">
@@ -101,6 +102,23 @@
       document.getElementById("longitud").value = lng;
     });
 
+    // Previsualizar imágenes seleccionadas
+    const inputFotos = document.getElementById('inputFotos');
+    const previewFotos = document.getElementById('previewFotos');
+    inputFotos.addEventListener('change', () => {
+      previewFotos.innerHTML = '';
+      Array.from(inputFotos.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'w-24 h-24 object-cover rounded';
+          previewFotos.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
     // Enviar formulario con fetch
     document.getElementById("formPublicar").addEventListener("submit", async e => {
       e.preventDefault();
@@ -116,6 +134,7 @@
         if (result.success) {
           mostrarModal('✅ Lugar publicado con éxito.');
           form.reset();
+          previewFotos.innerHTML = '';
           if (marker) { marker.remove(); marker = null; }
         } else {
           mostrarModal(result.message || '❌ Error al publicar.', 'red');

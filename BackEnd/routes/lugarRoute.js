@@ -8,6 +8,7 @@ router.get('/:id', lugarController.obtenerLugarPorId);
 router.get('/:id/resenas', lugarController.obtenerResenasLugar);
 
 // Nuevo endpoint para crear lugar con subida de múltiples imágenes
-router.post('/', upload.array('photos', 10), lugarController.crearLugar);
+// Permitir hasta 20 imágenes por lugar
+router.post('/', upload.array('photos', 20), lugarController.crearLugar);
 
 module.exports = router;

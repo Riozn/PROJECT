@@ -38,6 +38,7 @@
         <label class="block font-semibold text-sm text-gray-700 mb-1">Fotos del lugar</label>
         <input type="file" name="photos" accept="image/*" multiple required class="w-full border px-4 py-2 rounded" />
         <p class="text-xs text-gray-500 mt-1">Puedes seleccionar hasta 20 imágenes.</p>
+        <div id="previews" class="grid grid-cols-3 gap-2 mt-2"></div>
       </div>
 
       <div class="mb-4">
@@ -87,6 +88,23 @@
       }
     }
 
+    // Mostrar miniaturas de las fotos seleccionadas
+    function mostrarPrevisualizaciones(files) {
+      const contenedor = document.getElementById('previews');
+      contenedor.innerHTML = '';
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'w-24 h-24 object-cover rounded';
+          contenedor.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // Inicializar mapa Leaflet
     let marker;
     const map = L.map("map").setView([-17.7832, -63.1821], 13);
@@ -116,6 +134,7 @@
         if (result.success) {
           mostrarModal('✅ Lugar publicado con éxito.');
           form.reset();
+          document.getElementById('previews').innerHTML = '';
           if (marker) { marker.remove(); marker = null; }
         } else {
           mostrarModal(result.message || '❌ Error al publicar.', 'red');
@@ -139,6 +158,8 @@
     window.addEventListener('DOMContentLoaded', () => {
       cargarCategorias();
       cargarUsuario();
+      const inputFotos = document.querySelector('input[name="photos"]');
+      inputFotos.addEventListener('change', e => mostrarPrevisualizaciones(e.target.files));
     });
   </script>
 </body>
